@@ -52,3 +52,10 @@ You can see more detailed docs with the interactive help::
 
 Impermagit requires Python 2.6+, and has not been tested with Python
 3.
+
+----------
+Installing
+----------
+
+Install with pip or easy_install from pypi, or "python setup.py
+install" from source if you prefer.
