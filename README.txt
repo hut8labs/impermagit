@@ -8,7 +8,7 @@ integrate with git.  For example::
     from impermagit import fleeting_repo
 
     with fleeting_repo() as repo:
-        # there is not a git repo created in a temporary dir
+        # there is now a git repo created in a temporary dir
         # somewhere, allowing you to do things like:
 
         # add some files with some contents and commit them
