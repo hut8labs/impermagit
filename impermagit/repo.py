@@ -95,7 +95,7 @@ class Repo(object):
         # long or weird and wouldn't do well on the command line.
         with _temp_fname() as commit_fname:
             with open(commit_fname, 'wb') as fil:
-                fil.write(commit_msg)
+                fil.write(commit_msg.encode('utf-8'))
 
             commit_cmd.append("-F")
             commit_cmd.append(commit_fname)
@@ -129,7 +129,7 @@ class Repo(object):
                 self.do_git(["rm", fname])
             else:
                 with open(fpath, 'wb') as fil:
-                    fil.write(contents)
+                    fil.write(contents.encode('utf-8'))
                 self.do_git(["add", fname])
 
     def do_git(self, cmd):
@@ -272,7 +272,7 @@ def _ensure_dir_for_fpath(fpath):
     dir_name = os.path.dirname(fpath)
     try:
         os.makedirs(dir_name)
-    except OSError, exc:
+    except OSError as exc:
         if exc.errno != errno.EEXIST or not os.path.isdir(dir_name):
             raise
 
@@ -304,7 +304,7 @@ def _read_fname(fname):
     Open fname, read the contents, return them.
     """
     with open(fname, 'rb') as fil:
-        return fil.read()
+        return str(fil.read())
 
 
 def _real_abs(path):

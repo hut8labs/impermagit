@@ -1,3 +1,4 @@
+from io import IOBase
 import os
 import shutil
 import unittest
@@ -76,7 +77,7 @@ class TestRepoPaths(RepoTestCase):
 
     def test_get_path_returns_full_path(self):
         repo = Repo(self.test_repo_dir, git_exe=git_exe)
-        self.assertEquals(os.path.join(repo.repo_root,
+        self.assertEqual(os.path.join(repo.repo_root,
                                        'test.txt'),
                           repo.get_path('test.txt'))
 
@@ -107,7 +108,7 @@ class TestRepoBarfs(RepoTestCase):
 
         try:
             self.repo.do_git(["not_a_git_cmd"])
-        except GitExeException, e:
+        except GitExeException as e:
             ex = e
 
         self.assertTrue("not_a_git_cmd" in str(ex))
@@ -158,56 +159,58 @@ class CommitTestCase(RepoTestCase):
         self.assertTrue(os.path.exists(self.test_file_path_two))
 
         with open(self.test_file_path, 'rb') as fil:
-            self.assertEquals(self.test_contents, fil.read())
+            self.assertEqual(self.test_contents.encode('utf-8'), fil.read())
         with open(self.test_file_path_two, 'rb') as fil:
-            self.assertEquals(self.test_contents_two, fil.read())
+            self.assertEqual(self.test_contents_two.encode('utf-8'), fil.read())
 
     def test_commit_commits_files(self):
         with self.repo.yield_git(["ls-tree",
                                   "--name-only",
                                   "-r",
                                   "HEAD"]) as (out, err):
-            ls = out.read()
+            ls = out.read().decode('utf-8')
             self.assertTrue(self.test_file_name in ls)
             self.assertTrue(self.test_file_name_two in ls)
 
         with self.repo.yield_git(["status"]) as (out, err):
-            self.assertTrue("working directory clean" in out.read())
+            msg = out.read().decode('utf-8')
+            self.assertIn("working tree clean", msg)
 
     def test_commit_makes_one_commit_only(self):
         with self.repo.yield_git(["log", "--oneline"]) as (out, err):
             # initial commit, then the test commit
-            self.assertEquals(2, len(out.read().split("\n")))
+            self.assertEqual(2, len(out.read().decode('utf-8').split("\n")))
 
     def test_commit_passes_author(self):
         with self.repo.yield_git(["log"]) as (out, err):
-            self.assertTrue(("Author: %s" % self.test_author) in out.read())
+            self.assertTrue(("Author: %s" % self.test_author) in
+                            out.read().decode('utf-8'))
 
     def test_commit_passes_msg(self):
         with self.repo.yield_git(["log"]) as (out, err):
-            self.assertTrue(self.test_commit_msg in out.read())
+            self.assertTrue(self.test_commit_msg in out.read().decode('utf-8'))
 
     def test_commit_can_change_existing_files(self):
         new_test_contents = "new test contents\n"
         with open(self.test_file_path, 'rb') as fil:
             self.assertNotEqual(new_test_contents, fil.read())
         with self.repo.yield_git(["log", "--oneline"]) as (out, err):
-            self.assertEquals(2, len(out.read().split("\n")))
+            self.assertEqual(2, len(out.read().decode('utf-8').split("\n")))
         self.repo.commit([(self.test_file_name, new_test_contents)])
         with open(self.test_file_path, 'rb') as fil:
-            self.assertEquals(new_test_contents, fil.read())
+            self.assertEqual(new_test_contents, fil.read().decode('utf-8'))
         with self.repo.yield_git(["log", "--oneline"]) as (out, err):
-            self.assertEquals(3, len(out.read().split("\n")))
+            self.assertEqual(3, len(out.read().decode('utf-8').split("\n")))
 
     def test_commit_can_rm_files(self):
         self.assertTrue(os.path.exists(self.test_file_path))
         self.assertTrue(os.path.exists(self.test_file_path_two))
         with self.repo.yield_git(["log", "--oneline"]) as (out, err):
-            self.assertEquals(2, len(out.read().split("\n")))
+            self.assertEqual(2, len(out.read().decode('utf-8').split("\n")))
         self.repo.commit([(self.test_file_name, None),
                           (self.test_file_name_two, None)])
         with self.repo.yield_git(["log", "--oneline"]) as (out, err):
-            self.assertEquals(3, len(out.read().split("\n")))
+            self.assertEqual(3, len(out.read().decode('utf-8').split("\n")))
         self.assertFalse(os.path.exists(self.test_file_path))
         self.assertFalse(os.path.exists(self.test_file_path_two))
 
@@ -221,10 +224,10 @@ class TestGitCmds(CommitTestCase):
 
     def test_yield_git_runs_git_cmd_and_returns_out_and_err(self):
         with self.repo.yield_git(["log"]) as (out, err):
-            self.assertTrue(isinstance(err, file))
-            self.assertTrue(isinstance(out, file))
-            self.assertTrue(self.test_commit_msg in out.read())
-            self.assertEqual("", err.read())
+            self.assertTrue(isinstance(err, IOBase))
+            self.assertTrue(isinstance(out, IOBase))
+            self.assertTrue(self.test_commit_msg.encode('utf-8') in out.read())
+            self.assertEqual("".encode('utf-8'), err.read())
 
 
 if __name__ == '__main__':
